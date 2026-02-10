@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>דיווח מייל זדוני - OFIRSEC</title>
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <style>
+        body { background-color: #ffffff; padding: 20px; text-align: center; direction: rtl; font-family: 'Segoe UI', sans-serif; }
+        .header { margin-bottom: 20px; }
+        .logo { width: 100px; height: auto; margin-bottom: 15px; }
+        .report-button {
+            cursor: pointer; padding: 14px 40px; background-color: #2b579a; border: none;
+            color: #ffffff; font-size: 20px; font-weight: 600; border-radius: 4px;
+            transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .report-button:hover { background-color: #1a3a6d; transform: translateY(-4px); box-shadow: 0 8px 15px rgba(0,0,0,0.3); }
+        #item-subject { display: inline-block; margin-top: 20px; font-weight: bold; color: #2b579a; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <img src="https://ofirsec-report.infinityfreeapp.com/assets/icon-128.png" class="logo" alt="Logo">
+        <h1 style="color: #2b579a;">דיווח על מייל חשוד</h1>
+    </header>
+    <main>
+        <p>המייל יועבר לבחינה של צוות אבטחת המידע של <b>OFIRSEC</b>.</p>
+        <button id="run" class="report-button">דווח כעת</button>
+        <div id="item-subject"></div>
+    </main>
+    <script type="text/javascript" src="taskpane.js"></script>
+</body>
+</html>
