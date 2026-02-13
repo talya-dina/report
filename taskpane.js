@@ -10,16 +10,13 @@ Office.onReady((info) => {
 function reportEmail() {
   const statusElement = document.getElementById("status-message");
   if (statusElement) {
-    statusElement.innerHTML = "<p style='color: #2b579a;'>מעבד דיווח מאובטח...</p>";
+    statusElement.innerHTML = "<p style='color: #2b579a;'>שולח דיווח לצוות האבטחה...</p>";
   }
 
-  // מקבלים את ה-ID ומוודאים שהוא בפורמט תקין ל-XML
-  let itemId = Office.context.mailbox.item.itemId;
-  
-  // ניקוי תווים מיוחדים למניעת שגיאת Internal Error
-  itemId = itemId.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // קבלת ה-ID של המייל הנוכחי
+  const itemId = Office.context.mailbox.item.itemId;
 
-  // פקודת XML לשרת (EWS)
+  // פקודת XML לביצוע Forward אוטומטי (עוקף את שגיאה 9020)
   const ewsRequest = 
     `<?xml version="1.0" encoding="utf-8"?>
     <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
@@ -32,47 +29,36 @@ function reportEmail() {
       <soap:Body>
         <m:CreateItem MessageDisposition="SendOnly">
           <m:Items>
-            <t:Message>
-              <t:Subject>דיווח על מייל חשוד - OFIRSEC</t:Subject>
-              <t:Body BodyType="HTML">מצורף מייל שדווח כחשוד על ידי משתמש קצה באמצעות תוסף OFIRSEC.</t:Body>
-              <t:Attachments>
-                <t:ItemAttachment>
-                  <t:Name>Suspicious_Email.eml</t:Name>
-                  <t:Item>
-                    <t:ItemId Id="${itemId}" />
-                  </t:Item>
-                </t:ItemAttachment>
-              </t:Attachments>
+            <t:ForwardItem>
               <t:ToRecipients>
                 <t:Mailbox>
                   <t:EmailAddress>Info@ofirsec.co.il</t:EmailAddress>
                 </t:Mailbox>
               </t:ToRecipients>
-            </t:Message>
+              <t:ReferenceItemId Id="${itemId.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}" />
+              <t:NewBodyContent BodyType="HTML">מצורף דיווח על מייל חשוד שנשלח דרך תוסף OFIRSEC.</t:NewBodyContent>
+            </t:ForwardItem>
           </m:Items>
         </m:CreateItem>
       </soap:Body>
     </soap:Envelope>`;
 
+  // ביצוע הבקשה מול השרת
   Office.context.mailbox.makeEwsRequestAsync(ewsRequest, (asyncResult) => {
     if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
-      console.log("EWS Success!");
       if (statusElement) {
         statusElement.innerHTML = `
           <div style="text-align:center; margin-top: 20px;">
             <p style="color:green; font-weight:bold; font-size:18px;">✅ הדיווח נשלח בהצלחה!</p>
-            <p>תודה על ערנותך, המייל הועבר לטיפול.</p>
+            <p>תודה על ערנותך, צוות האבטחה קיבל את הדיווח.</p>
           </div>`;
       }
     } else {
-      // הדפסה מפורטת ל-Console כדי שנוכל לאבחן במקרה של תקלה
-      console.error("EWS Failed Status: " + asyncResult.status);
-      console.error("Error Details: ", asyncResult.error);
-      
+      console.error("EWS Error: ", asyncResult.error);
       if (statusElement) {
         statusElement.innerHTML = `
           <div style="color:red; margin-top: 20px;">
-            <p>❌ חלה שגיאה פנימית בשליחה.</p>
+            <p>❌ תקלה בשליחת הדיווח.</p>
             <small>קוד שגיאה: ${asyncResult.error.code}</small>
           </div>`;
       }
