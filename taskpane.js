@@ -11,11 +11,16 @@ function reportEmail() {
   const statusElement = document.getElementById("status-message");
   statusElement.innerHTML = "<p style='color: #2b579a;'>מכין את הדיווח...</p>";
 
-  // פתיחת חלון הודעה חדשה שבו הכל כבר מוכן
-  // שיטה זו עובדת בכל ארגון ובכל גרסת אאוטלוק בלי צורך בהגדרות שרת
+  // יצירת חותמת זמן (מילי-שניות) כדי שהנושא יהיה חד-ערכי לחלוטין
+  const timestamp = Date.now();
+  
+  // הנושא החדש שיאפשר ל-Flow ול-SharePoint למצוא את המייל בקלות
+  const uniqueSubject = `דיווח על מייל חשוד - OFIRSEC Security (ID: ${timestamp})`;
+
+  // פתיחת חלון הודעה חדשה עם הנושא הייחודי והמייל המקורי מצורף
   Office.context.mailbox.displayNewMessageForm({
     toRecipients: ["Info@ofirsec.co.il"],
-    subject: "דיווח על מייל חשוד - OFIRSEC Security",
+    subject: uniqueSubject,
     htmlBody: "שלום צוות אבטחה,<br><br>אני מדווח על המייל המצורף כחשוד כפישינג.",
     attachments: [
       {
