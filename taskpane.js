@@ -15,7 +15,7 @@ function reportEmail() {
   const timestamp = Date.now();
   const uniqueSubject = `דיווח על מייל חשוד - OFIRSEC Security (ID: ${timestamp})`;
 
-  // 1. פתיחת חלונית הדיווח - זה החלק שפותח את המייל לשליחה
+  // 1. פתיחת חלונית הדיווח
   Office.context.mailbox.displayNewMessageForm({
     toRecipients: ["Info@ofirsec.co.il"],
     subject: uniqueSubject,
@@ -28,23 +28,19 @@ function reportEmail() {
   });
 
   // 2. העברה לתיקיית Junk
-  // שימוש במחרוזת "junk" עוקף את השגיאה שראית בתמונה
-  if (item.moveItemAsync) {
+  // שימוש ב-"junk" כמחרוזת טקסט חסין לטעויות
+  if (item && item.moveItemAsync) {
     item.moveItemAsync("junk", function (result) {
       if (result.status === Office.AsyncResultStatus.Succeeded) {
-        statusElement.innerHTML = `
-          <div style='color:green;'>
-            <b>הדיווח נפתח והמייל הועבר ל-Junk!</b><br>
-            אל תשכח ללחוץ על 'שלח' בחלון שנפתח.
-          </div>`;
+        statusElement.innerHTML = "<div style='color:green;'><b>הדיווח נפתח והמייל הועבר ל-Junk!</b></div>";
       } else {
         console.error("Move failed: " + result.error.message);
-        statusElement.innerHTML = "<div style='color:green;'><b>חלון הדיווח נפתח!</b></div>";
+        statusElement.innerHTML = "<div style='color:green;'><b>הדיווח נפתח!</b></div>";
       }
     });
   } else {
-    // אם בכל זאת הפונקציה לא קיימת (למשל אם העדכון של ה-XML עוד לא נכנס לתוקף מלא)
-    statusElement.innerHTML = "<div style='color:green;'><b>חלון הדיווח נפתח!</b></div>";
-    console.warn("moveItemAsync is still not available.");
+    // אם הגעת לכאן, זה אומר שהאאוטלוק עדיין לא "מעוקל" על גרסת המניפסט החדשה (1.5)
+    console.warn("moveItemAsync is not yet available on this item.");
+    statusElement.innerHTML = "<div style='color:green;'><b>הדיווח נפתח!</b><br><small>(העברה אוטומטית תהיה זמינה לאחר סיום עדכון המערכת)</small></div>";
   }
 }
