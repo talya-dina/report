@@ -15,11 +15,11 @@ function reportEmail() {
   const timestamp = Date.now();
   const uniqueSubject = `דיווח על מייל חשוד - OFIRSEC Security (ID: ${timestamp})`;
 
-  // 1. פתיחת חלונית הדיווח
+  // 1. פתיחת חלונית הדיווח - זה החלק שפותח את המייל לשליחה
   Office.context.mailbox.displayNewMessageForm({
     toRecipients: ["Info@ofirsec.co.il"],
     subject: uniqueSubject,
-    htmlBody: "שלום צוות אבטחה, אני מדווח על מייל חשוד.",
+    htmlBody: "שלום צוות אבטחה, אני מדווח על המייל המצורף כחשוד כפישינג.",
     attachments: [{
       type: Office.MailboxEnums.AttachmentType.Item,
       name: "Suspicious_Email",
@@ -27,13 +27,24 @@ function reportEmail() {
     }]
   });
 
-  // 2. העברה לתיקיית Junk (עכשיו נתמך בזכות גרסה 1.5 ב-XML)
-  item.moveItemAsync(Office.MailboxEnums.StandardFolder.Junk, function (result) {
-    if (result.status === Office.AsyncResultStatus.Succeeded) {
-      statusElement.innerHTML = "<div style='color:green;'><b>הדיווח נפתח והמייל הועבר ל-Junk!</b></div>";
-    } else {
-      console.error("Move failed: " + result.error.message);
-      statusElement.innerHTML = "<div style='color:green;'><b>חלון הדיווח נפתח!</b></div>";
-    }
-  });
+  // 2. העברה לתיקיית Junk
+  // שימוש במחרוזת "junk" עוקף את השגיאה שראית בתמונה
+  if (item.moveItemAsync) {
+    item.moveItemAsync("junk", function (result) {
+      if (result.status === Office.AsyncResultStatus.Succeeded) {
+        statusElement.innerHTML = `
+          <div style='color:green;'>
+            <b>הדיווח נפתח והמייל הועבר ל-Junk!</b><br>
+            אל תשכח ללחוץ על 'שלח' בחלון שנפתח.
+          </div>`;
+      } else {
+        console.error("Move failed: " + result.error.message);
+        statusElement.innerHTML = "<div style='color:green;'><b>חלון הדיווח נפתח!</b></div>";
+      }
+    });
+  } else {
+    // אם בכל זאת הפונקציה לא קיימת (למשל אם העדכון של ה-XML עוד לא נכנס לתוקף מלא)
+    statusElement.innerHTML = "<div style='color:green;'><b>חלון הדיווח נפתח!</b></div>";
+    console.warn("moveItemAsync is still not available.");
+  }
 }
