@@ -10,12 +10,12 @@ Office.onReady((info) => {
 function reportEmail() {
   const item = Office.context.mailbox.item;
   const statusElement = document.getElementById("status-message");
-  statusElement.innerHTML = "מדווח ומסיר מהתיבה...";
+  statusElement.innerHTML = "מכין דיווח...";
 
   const timestamp = Date.now();
   const uniqueSubject = `דיווח על מייל חשוד - OFIRSEC Security (ID: ${timestamp})`;
 
-  // 1. פתיחת חלונית הדיווח (זה תמיד עובד)
+  // 1. פתיחת חלונית הדיווח (זה החלק החשוב ביותר)
   Office.context.mailbox.displayNewMessageForm({
     toRecipients: ["Info@ofirsec.co.il"],
     subject: uniqueSubject,
@@ -27,22 +27,28 @@ function reportEmail() {
     }]
   });
 
-  // 2. במקום להעביר ל-Junk (שחסום אצלכם), פשוט מוחקים את המייל מה-Inbox
-  // פונקציית archiveItemAsync נתמכת בגרסאות הרבה יותר ישנות
-  if (item && item.itemId) {
-    // אנחנו משתמשים ב-REST למחיקה בטוחה שתעבוד בכל גרסה
-    item.removeAttachmentAsync(0, { asyncContext: null }, function(result) {
-       // כאן אנחנו רק מוודאים שהקוד לא קורס
+  // 2. ניסיון להוציא את המייל מה-Inbox (ארכיון/מחיקה)
+  if (item.archiveItemAsync) {
+    item.archiveItemAsync(function (result) {
+      if (result.status === Office.AsyncResultStatus.Succeeded) {
+        statusElement.innerHTML = "<b style='color:green;'>הדיווח נפתח והמייל הוסר מהתיבה!</b>";
+      } else {
+        // אם הארכיון נכשל, ננחה את המשתמש למחוק
+        showManualDeleteMessage(statusElement);
+      }
     });
-
-    // הפתרון הכי יציב: הודעה למשתמש
-    statusElement.innerHTML = `
-      <div style="color: green; font-weight: bold;">
-        הדיווח נפתח בהצלחה!<br><br>
-        <span style="color: black; font-weight: normal;">
-          שלב אחרון: לחץ על 'שלח' בדיווח ומחק את המייל המקורי.
-        </span>
-      </div>
-    `;
+  } else {
+    // אם גם הפונקציה הזו לא זמינה בגרסה שלך
+    showManualDeleteMessage(statusElement);
   }
+}
+
+function showManualDeleteMessage(element) {
+  element.innerHTML = `
+    <div style="color: #2b579a; text-align: right; direction: rtl;">
+      <b style="color: green;">הדיווח נפתח בהצלחה!</b><br><br>
+      1. לחץ על <b>'שלח'</b> בחלון החדש.<br>
+      2. כעת ניתן <b>למחוק</b> את המייל המקורי.
+    </div>
+  `;
 }
