@@ -10,16 +10,12 @@ Office.onReady((info) => {
 function reportEmail() {
   const item = Office.context.mailbox.item;
   const statusElement = document.getElementById("status-message");
-  statusElement.innerHTML = "מכין דיווח...";
+  statusElement.innerHTML = "מדווח ומבודד את המייל...";
 
-  const timestamp = Date.now();
-  const uniqueSubject = `דיווח על מייל חשוד - OFIRSEC Security (ID: ${timestamp})`;
-
-  // 1. פתיחת חלונית הדיווח (זה החלק החשוב ביותר)
+  // 1. פתיחת חלונית הדיווח (החלק שחייב להישאר כדי שהמשתמש ילחץ 'שלח')
   Office.context.mailbox.displayNewMessageForm({
     toRecipients: ["Info@ofirsec.co.il"],
-    subject: uniqueSubject,
-    htmlBody: "שלום צוות אבטחה, אני מדווח על המייל המצורף כחשוד.",
+    subject: "חשד לפישינג: " + item.subject,
     attachments: [{
       type: Office.MailboxEnums.AttachmentType.Item,
       name: "Suspicious_Email",
@@ -27,28 +23,34 @@ function reportEmail() {
     }]
   });
 
-  // 2. ניסיון להוציא את המייל מה-Inbox (ארכיון/מחיקה)
-  if (item.archiveItemAsync) {
-    item.archiveItemAsync(function (result) {
-      if (result.status === Office.AsyncResultStatus.Succeeded) {
-        statusElement.innerHTML = "<b style='color:green;'>הדיווח נפתח והמייל הוסר מהתיבה!</b>";
-      } else {
-        // אם הארכיון נכשל, ננחה את המשתמש למחוק
-        showManualDeleteMessage(statusElement);
-      }
-    });
-  } else {
-    // אם גם הפונקציה הזו לא זמינה בגרסה שלך
-    showManualDeleteMessage(statusElement);
-  }
-}
+  // 2. פקודת "מאחורי הקלעים" להעברת המייל ל-Junk
+  // שיטה זו עוקפת את מגבלת הגרסה שנתקלת בה
+  const itemId = item.itemId;
+  const ewsRequest = 
+    `<?xml version="1.0" encoding="utf-8"?>
+     <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+                    xmlns:m="http://schemas.microsoft.com/exchange/services/2006/messages" 
+                    xmlns:t="http://schemas.microsoft.com/exchange/services/2006/types" 
+                    xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+       <soap:Body>
+         <m:MoveItem>
+           <m:ToFolderId>
+             <t:DistinguishedFolderId Id="junkemail"/>
+           </m:ToFolderId>
+           <m:ItemIds>
+             <t:ItemId Id="${itemId}"/>
+           </m:ItemIds>
+         </m:MoveItem>
+       </soap:Body>
+     </soap:Envelope>`;
 
-function showManualDeleteMessage(element) {
-  element.innerHTML = `
-    <div style="color: #2b579a; text-align: right; direction: rtl;">
-      <b style="color: green;">הדיווח נפתח בהצלחה!</b><br><br>
-      1. לחץ על <b>'שלח'</b> בחלון החדש.<br>
-      2. כעת ניתן <b>למחוק</b> את המייל המקורי.
-    </div>
-  `;
+  Office.context.mailbox.makeEwsRequestAsync(ewsRequest, function (result) {
+    if (result.status === Office.AsyncResultStatus.Succeeded) {
+      statusElement.innerHTML = "<b style='color:green;'>הדיווח נפתח והמייל הועבר ל-Junk.</b>";
+    } else {
+      // אם גם זה נכשל, כנראה שיש חסימה רוחבית ב-IT על תוספים
+      console.error(result.error);
+      statusElement.innerHTML = "<b>הדיווח נפתח!</b><br>אנא סגור את המייל המקורי.";
+    }
+  });
 }
