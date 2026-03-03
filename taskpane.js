@@ -8,49 +8,28 @@ Office.onReady((info) => {
 });
 
 function reportEmail() {
-  const item = Office.context.mailbox.item;
   const statusElement = document.getElementById("status-message");
-  statusElement.innerHTML = "מדווח ומבודד את המייל...";
+  statusElement.innerHTML = "<p style='color: #2b579a;'>מכין את הדיווח...</p>";
 
-  // 1. פתיחת חלונית הדיווח (החלק שחייב להישאר כדי שהמשתמש ילחץ 'שלח')
+  // יצירת חותמת זמן (מילי-שניות) כדי שהנושא יהיה חד-ערכי לחלוטין
+  const timestamp = Date.now();
+  
+  // הנושא החדש שיאפשר ל-Flow ול-SharePoint למצוא את המייל בקלות
+  const uniqueSubject = `דיווח על מייל חשוד - OFIRSEC Security (ID: ${timestamp})`;
+
+  // פתיחת חלון הודעה חדשה עם הנושא הייחודי והמייל המקורי מצורף
   Office.context.mailbox.displayNewMessageForm({
     toRecipients: ["Info@ofirsec.co.il"],
-    subject: "חשד לפישינג: " + item.subject,
-    attachments: [{
-      type: Office.MailboxEnums.AttachmentType.Item,
-      name: "Suspicious_Email",
-      itemId: item.itemId
-    }]
+    subject: uniqueSubject,
+    htmlBody: "שלום צוות אבטחה,<br><br>אני מדווח על המייל המצורף כחשוד כפישינג.",
+    attachments: [
+      {
+        type: Office.MailboxEnums.AttachmentType.Item,
+        name: "Suspicious_Email",
+        itemId: Office.context.mailbox.item.itemId
+      }
+    ]
   });
 
-  // 2. פקודת "מאחורי הקלעים" להעברת המייל ל-Junk
-  // שיטה זו עוקפת את מגבלת הגרסה שנתקלת בה
-  const itemId = item.itemId;
-  const ewsRequest = 
-    `<?xml version="1.0" encoding="utf-8"?>
-     <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-                    xmlns:m="http://schemas.microsoft.com/exchange/services/2006/messages" 
-                    xmlns:t="http://schemas.microsoft.com/exchange/services/2006/types" 
-                    xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-       <soap:Body>
-         <m:MoveItem>
-           <m:ToFolderId>
-             <t:DistinguishedFolderId Id="junkemail"/>
-           </m:ToFolderId>
-           <m:ItemIds>
-             <t:ItemId Id="${itemId}"/>
-           </m:ItemIds>
-         </m:MoveItem>
-       </soap:Body>
-     </soap:Envelope>`;
-
-  Office.context.mailbox.makeEwsRequestAsync(ewsRequest, function (result) {
-    if (result.status === Office.AsyncResultStatus.Succeeded) {
-      statusElement.innerHTML = "<b style='color:green;'>הדיווח נפתח והמייל הועבר ל-Junk.</b>";
-    } else {
-      // אם גם זה נכשל, כנראה שיש חסימה רוחבית ב-IT על תוספים
-      console.error(result.error);
-      statusElement.innerHTML = "<b>הדיווח נפתח!</b><br>אנא סגור את המייל המקורי.";
-    }
-  });
+  statusElement.innerHTML = "<div style='color:green;'><b>חלון הדיווח נפתח!</b><br>אנא לחץ על 'שלח' כדי להשלים את הדיווח.</div>";
 }
