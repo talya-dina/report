@@ -11,25 +11,55 @@ function reportEmail() {
   const statusElement = document.getElementById("status-message");
   statusElement.innerHTML = "<p style='color: #2b579a;'>מכין את הדיווח...</p>";
 
-  // יצירת חותמת זמן (מילי-שניות) כדי שהנושא יהיה חד-ערכי לחלוטין
+  const item = Office.context.mailbox.item;
   const timestamp = Date.now();
-  
-  // הנושא החדש שיאפשר ל-Flow ול-SharePoint למצוא את המייל בקלות
-  const uniqueSubject = `דיווח על מייל חשוד - OFIRSEC Security (ID: ${timestamp})`;
+  const formattedTime = new Date(timestamp).toLocaleString("he-IL");
 
-  // פתיחת חלון הודעה חדשה עם הנושא הייחודי והמייל המקורי מצורף
+  // שליפת נושא המייל המקורי וקיצורו עבור שורת הנושא
+  const fullSubject = item.subject ? item.subject.trim() : "ללא נושא";
+  const shortSubject = fullSubject.length > 80 ? fullSubject.substring(0, 80) + "..." : fullSubject;
+  const uniqueSubject = `דיווח על מייל חשוד: ${shortSubject} | OFIRSEC Security (ID: ${timestamp})`;
+
+  // טבלה נקייה וקצרה עם נושא המייל וחותמת הזמן בלבד
+  const htmlBody = `
+    <div dir="rtl" style="font-family: Arial, sans-serif; color: #333333;">
+      <p>שלום צוות אבטחה,</p>
+      <p>אני מדווח על המייל המצורף כחשוד כפישינג.</p>
+      
+      <table style="border-collapse: collapse; width: 100%; max-width: 550px; margin-top: 10px; border: 1px solid #d0d7de; font-size: 14px;">
+        <tbody>
+          <tr style="background-color: #f6f8fa;">
+            <td style="padding: 8px 12px; border: 1px solid #d0d7de; font-weight: bold; width: 140px;">נושא המייל:</td>
+            <td style="padding: 8px 12px; border: 1px solid #d0d7de;">${escapeHtml(fullSubject)}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 12px; border: 1px solid #d0d7de; font-weight: bold;">זמן דיווח (ID):</td>
+            <td style="padding: 8px 12px; border: 1px solid #d0d7de;">${formattedTime} <span style="color: #666; font-family: monospace;">(${timestamp})</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+
   Office.context.mailbox.displayNewMessageForm({
     toRecipients: ["Info@ofirsec.co.il"],
     subject: uniqueSubject,
-    htmlBody: "שלום צוות אבטחה,<br><br>אני מדווח על המייל המצורף כחשוד כפישינג.",
+    htmlBody: htmlBody,
     attachments: [
       {
         type: Office.MailboxEnums.AttachmentType.Item,
         name: "Suspicious_Email",
-        itemId: Office.context.mailbox.item.itemId
+        itemId: item.itemId
       }
     ]
   });
 
   statusElement.innerHTML = "<div style='color:green;'><b>חלון הדיווח נפתח!</b><br>אנא לחץ על 'שלח' כדי להשלים את הדיווח.</div>";
+}
+
+function escapeHtml(text) {
+  if (!text) return "";
+  const div = document.createElement("div");
+  div.innerText = text;
+  return div.innerHTML;
 }
