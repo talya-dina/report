@@ -35,7 +35,7 @@ function reportEmail() {
   // טבלה נקייה וקצרה עם נושא המייל וחותמת הזמן בלבד
   const htmlBody = `
     <div dir="rtl" style="font-family: Arial, sans-serif; color: #333333;">
-      <p>שלום צוות אבטחה,</p>
+      <p>היי צוות OFIRSEC,</p>
       <p>אני מדווח על המייל המצורף כחשוד כפישינג.</p>
       
       <table style="border-collapse: collapse; width: 100%; max-width: 550px; margin-top: 10px; border: 1px solid #d0d7de; font-size: 14px;">
