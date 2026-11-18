@@ -20,6 +20,18 @@ function reportEmail() {
   const shortSubject = fullSubject.length > 80 ? fullSubject.substring(0, 80) + "..." : fullSubject;
   const uniqueSubject = `דיווח על מייל חשוד: ${shortSubject} | OFIRSEC Security (ID: ${timestamp})`;
 
+  // יצירת שם קובץ בטוח עבור הצרופה על בסיס נושא המייל המקורי
+  let safeAttachmentName = fullSubject
+    .replace(/[\\/:*?"<>|]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!safeAttachmentName) {
+    safeAttachmentName = "Suspicious_Email";
+  } else if (safeAttachmentName.length > 60) {
+    safeAttachmentName = safeAttachmentName.substring(0, 60).trim();
+  }
+
   // טבלה נקייה וקצרה עם נושא המייל וחותמת הזמן בלבד
   const htmlBody = `
     <div dir="rtl" style="font-family: Arial, sans-serif; color: #333333;">
@@ -41,6 +53,7 @@ function reportEmail() {
     </div>
   `;
 
+  // פתיחת חלון הודעה חדשה שבו הכל כבר מוכן
   Office.context.mailbox.displayNewMessageForm({
     toRecipients: ["Info@ofirsec.co.il"],
     subject: uniqueSubject,
@@ -48,7 +61,7 @@ function reportEmail() {
     attachments: [
       {
         type: Office.MailboxEnums.AttachmentType.Item,
-        name: "Suspicious_Email",
+        name: safeAttachmentName,
         itemId: item.itemId
       }
     ]
